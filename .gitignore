@@ -1,0 +1,16 @@
+# build outputs
+*.mobi
+*.azw3
+build/
+build-plain/
+
+# downloaded SUM-11 tab file, kindling binary
+work/
+*.zip
+
+# python
+.venv/
+__pycache__/
+
+.DS_Store
+*.log
