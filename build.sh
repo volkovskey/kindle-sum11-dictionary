@@ -1,22 +1,31 @@
 #!/usr/bin/env bash
-# Build sum11.mobi from scratch: download the SUM-11 tab file, generate
-# OPF + HTML with build_sum.py, compile with kindling.
+# Build the dictionaries from scratch: download SUM-11 and the Ukrainian
+# Wiktionary dump, generate OPF + HTML with build_dict.py, compile with kindling.
 #
-#   ./build.sh            # full dictionary with word forms -> sum11.mobi
-#   NO_INFL=1 ./build.sh  # headwords only                  -> sum11-plain.mobi
+#   ./build.sh                  # all four variants      -> dist/*.mobi
+#   MODE=wiki+sum11 ./build.sh  # one variant (sum11 | wiki | sum11+wiki | wiki+sum11)
+#   NO_INFL=1 ./build.sh        # headwords only, no word forms -> dist/*-plain.mobi
 set -euo pipefail
 cd "$(dirname "$0")"
 
 TAB_URL=https://github.com/bakustarver/ukr-dictionaries-list-opensource/releases/download/ukr-ukr_SUM-11_or_1/Tabfile-ukr-ukr_SUM-11_or_1.zip
 TAB=work/ukr-ukr_SUM-11_or_1.txt
+WIKI_URL=${WIKI_URL:-https://dumps.wikimedia.org/ukwiktionary/latest/ukwiktionary-latest-pages-articles.xml.bz2}
+WIKI=work/ukwiktionary-pages-articles.xml.bz2
 KINDLING_VERSION=v0.45.6
+MODE=${MODE:-all}
 
-mkdir -p work
+mkdir -p work dist
 
 if [ ! -f "$TAB" ]; then
     echo ">> downloading SUM-11 tab file"
     curl -fL -o work/tab.zip "$TAB_URL"
     unzip -j -o work/tab.zip '*.txt' -d work
+fi
+
+if [ ! -f "$WIKI" ]; then
+    echo ">> downloading Ukrainian Wiktionary dump"
+    curl -fL -o "$WIKI" "$WIKI_URL"
 fi
 
 if [ ! -x .venv/bin/python ]; then
@@ -42,12 +51,15 @@ else
     fi
 fi
 
-if [ "${NO_INFL:-}" = 1 ]; then out=build-plain mobi=sum11-plain.mobi; else out=build mobi=sum11.mobi; fi
+if [ "${NO_INFL:-}" = 1 ]; then out=build-plain suffix=-plain; else out=build suffix=; fi
 
 echo ">> generating $out/"
 rm -rf "$out"
-.venv/bin/python -I build_sum.py "$TAB" "$out"
+.venv/bin/python -I build_dict.py --mode "$MODE" --sum "$TAB" --wiki "$WIKI" "$out"
 
-echo ">> compiling $mobi"
-"$KINDLING" build "$out/sum11.opf" -o "$mobi"
-ls -l "$mobi"
+for opf in "$out"/*/dict.opf; do
+    name=$(basename "$(dirname "$opf")")
+    echo ">> compiling dist/$name$suffix.mobi"
+    "$KINDLING" build "$opf" -o "dist/$name$suffix.mobi"
+done
+ls -l dist/
