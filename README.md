@@ -32,12 +32,14 @@
 | 🇺🇦 | **Сучасне «ґ»**: «ґанок», «аґрус», «ґратами» ведуть до статей СУМ-11 з «г» |
 | ’ | **Будь-який апостроф**: ’ &nbsp;'&nbsp; ʼ |
 
-<!-- TODO: замінити заглушки скріншотами (docs/screenshots/*.png) -->
 <table>
   <tr>
-    <td align="center" width="33%"><i>скріншот буде згодом</i><br><br><sub>Спливне вікно в книжці</sub></td>
-    <td align="center" width="33%"><i>скріншот буде згодом</i><br><br><sub>Повна стаття</sub></td>
-    <td align="center" width="33%"><i>скріншот буде згодом</i><br><br><sub>Вибір словника</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/popup.png" alt="Спливне вікно зі статтею «скорпіон» у книжці"></td>
+    <td align="center" width="50%"><img src="docs/screenshots/expanded.png" alt="Розгорнута стаття «зверхність»"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Утримали палець на слові «скорпіон»</sub></td>
+    <td align="center"><sub>«Зверхність» з початку речення: розгорнута стаття</sub></td>
   </tr>
 </table>
 

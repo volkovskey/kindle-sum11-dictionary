@@ -22,6 +22,13 @@ Long-press a word in a Ukrainian book to see its definition.
   capitalized ones at the start of a sentence.
 - Modern spellings with «ґ» open the SUM-11 headwords written with «г».
 
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/screenshots/popup.png" alt="Lookup popup for «скорпіон» in a book"></td>
+    <td align="center" width="50%"><img src="docs/screenshots/expanded.png" alt="Expanded entry «зверхність»"></td>
+  </tr>
+</table>
+
 ## Install
 
 1. Download `sum11.mobi` from [Releases](../../releases/latest).
