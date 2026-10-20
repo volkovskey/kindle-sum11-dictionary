@@ -31,7 +31,9 @@ Long-press a word in a Ukrainian book to see its definition.
    [Send to Kindle for Mac](https://www.amazon.com/sendtokindle).
    Wireless Send to Kindle does not work: it rejects `.mobi` and would not put
    the file into the dictionaries folder.
-3. In a Ukrainian book, long-press a word. If another dictionary opens, tap its
+3. Open the dictionary once from the library like a regular book, then close
+   it. Without this, some Kindles report "no definition found" on lookups.
+4. In a Ukrainian book, long-press a word. If another dictionary opens, tap its
    name in the popup and pick *«СУМ-11: тлумачний словник української мови»*.
 
 Kindle has no Ukrainian keyboard, so typing searches inside the dictionary is
