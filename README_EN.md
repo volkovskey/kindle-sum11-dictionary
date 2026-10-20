@@ -1,10 +1,21 @@
-# SUM-11 for Kindle
+<div align="center">
 
-The Ukrainian explanatory dictionary *Slovnyk ukrainskoi movy* in 11 volumes
-(Academy of Sciences of the Ukrainian SSR, 1970–1980) as a Kindle dictionary.
+# 📖 SUM-11 for Kindle
+
+**The Ukrainian explanatory dictionary in 11 volumes**<br>
+Academy of Sciences of the Ukrainian SSR · 1970–1980
+
 Long-press a word in a Ukrainian book to see its definition.
 
-[Українська версія](README.md)
+[![Release](https://img.shields.io/github/v/release/volkovskey/kindle-sum11-dictionary?color=0057B7)](../../releases/latest)
+[![License: AGPL-3.0](https://img.shields.io/badge/code-AGPL--3.0-informational)](LICENSE)
+![Kindle](https://img.shields.io/badge/Kindle-.mobi-FF9900?logo=amazon&logoColor=white)
+
+**[⬇️ Download](../../releases/latest)** &nbsp;·&nbsp; **[Українська версія](README.md)**
+
+</div>
+
+---
 
 - ~131k entries with usage examples.
 - Inflected forms are found (≈3.7M forms generated with pymorphy3), including
@@ -14,10 +25,13 @@ Long-press a word in a Ukrainian book to see its definition.
 ## Install
 
 1. Download `sum11.mobi` from [Releases](../../releases/latest).
-2. Connect the Kindle via USB (some newer models use MTP: on macOS use OpenMTP
-   or Android File Transfer).
-3. Copy the file to `documents/dictionaries`, then eject.
-4. In a Ukrainian book, long-press a word. If another dictionary opens, tap its
+2. Copy the file to `documents/dictionaries` on the Kindle **over USB**, then
+   eject. Kindles released in 2024 or later and Kindle Scribe do not mount as
+   a drive on macOS: use **Tools → USB File Manager** in
+   [Send to Kindle for Mac](https://www.amazon.com/sendtokindle).
+   Wireless Send to Kindle does not work: it rejects `.mobi` and would not put
+   the file into the dictionaries folder.
+3. In a Ukrainian book, long-press a word. If another dictionary opens, tap its
    name in the popup and pick *«СУМ-11: тлумачний словник української мови»*.
 
 Kindle has no Ukrainian keyboard, so typing searches inside the dictionary is
