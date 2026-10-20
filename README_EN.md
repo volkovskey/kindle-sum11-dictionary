@@ -1,14 +1,14 @@
 <div align="center">
 
-# 📖 SUM-11 for Kindle
+# 📖 Ukrainian explanatory dictionary for Kindle
 
-**The Ukrainian explanatory dictionary in 11 volumes**<br>
-Academy of Sciences of the Ukrainian SSR · 1970–1980
+**SUM-11** (Academy of Sciences of the Ukrainian SSR · 1970–1980) **+ Ukrainian Wiktionary**
 
 Long-press a word in a Ukrainian book to see its definition.
 
 [![Release](https://img.shields.io/github/v/release/volkovskey/kindle-sum11-dictionary?color=0057B7)](../../releases/latest)
 [![License: AGPL-3.0](https://img.shields.io/badge/code-AGPL--3.0-informational)](LICENSE)
+[![Wiktionary: CC BY-SA 4.0](https://img.shields.io/badge/Wiktionary-CC%20BY--SA%204.0-lightgrey)](https://creativecommons.org/licenses/by-sa/4.0/)
 ![Kindle](https://img.shields.io/badge/Kindle-.mobi-FF9900?logo=amazon&logoColor=white)
 
 **[⬇️ Download](../../releases/latest)** &nbsp;·&nbsp; **[Українська версія](README.md)**
@@ -17,11 +17,6 @@ Long-press a word in a Ukrainian book to see its definition.
 
 ---
 
-- ~131k entries with usage examples.
-- Inflected forms are found (≈3.7M forms generated with pymorphy3), including
-  capitalized ones at the start of a sentence.
-- Modern spellings with «ґ» open the SUM-11 headwords written with «г».
-
 <table>
   <tr>
     <td align="center" width="50%"><img src="docs/screenshots/popup.png" alt="Lookup popup for «скорпіон» in a book"></td>
@@ -29,10 +24,23 @@ Long-press a word in a Ukrainian book to see its definition.
   </tr>
 </table>
 
+## Which file
+
+| | File | Entries | Size | Contents |
+|:--:|:--|--:|--:|:--|
+| ⭐ | **`wiktionary-sum11.mobi`** (recommended) | 138,018 | 174 MB | Wiktionary first, SUM-11 for words Wiktionary lacks or only cross-references |
+| | `sum11-wiktionary.mobi` | 138,040 | 180 MB | SUM-11 first, Wiktionary for words SUM-11 lacks |
+| | `sum11.mobi` | 131,155 | 173 MB | SUM-11 only (same as v1.0) |
+| | `wiktionary.mobi` | 19,915 | 17 MB | Ukrainian Wiktionary only |
+
+All variants find inflected forms (≈3.7M, generated with pymorphy3), capitalized
+words at the start of a sentence, «ґ»/«г» spellings and any apostrophe. In the
+mixed dictionaries every entry ends with its source.
+
 ## Install
 
-1. Download `sum11.mobi` from [Releases](../../releases/latest).
-2. Copy the file to `documents/dictionaries` on the Kindle **over USB**, then
+1. Download a `.mobi` from [Releases](../../releases/latest).
+2. Copy it to `documents/dictionaries` on the Kindle **over USB**, then
    eject. Kindles released in 2024 or later and Kindle Scribe do not mount as
    a drive on macOS: use **Tools → USB File Manager** in
    [Send to Kindle for Mac](https://www.amazon.com/sendtokindle).
@@ -41,7 +49,7 @@ Long-press a word in a Ukrainian book to see its definition.
 3. Open the dictionary once from the library like a regular book, then close
    it. Without this, some Kindles report "no definition found" on lookups.
 4. In a Ukrainian book, long-press a word. If another dictionary opens, tap its
-   name in the popup and pick *«СУМ-11: тлумачний словник української мови»*.
+   name in the popup and pick the one you installed.
 
 Kindle has no Ukrainian keyboard, so typing searches inside the dictionary is
 limited. Lookups from books work fully.
@@ -49,13 +57,15 @@ limited. Lookups from books work fully.
 ## Build
 
 ```sh
-./build.sh            # -> sum11.mobi
-NO_INFL=1 ./build.sh  # -> sum11-plain.mobi (headwords only)
+./build.sh                  # all four variants -> dist/*.mobi
+MODE=wiki+sum11 ./build.sh  # one variant: sum11 | wiki | sum11+wiki | wiki+sum11
+NO_INFL=1 ./build.sh        # headwords only    -> dist/*-plain.mobi
 ```
 
 The script needs macOS or Linux with `python3`, `curl` and `unzip`. It downloads
-the SUM-11 tab file, generates OPF/HTML with `build_sum.py` and compiles them
-with [kindling](https://github.com/ciscoriordan/kindling).
+the SUM-11 tab file and the latest Ukrainian Wiktionary dump, generates OPF/HTML
+with `build_dict.py` (Wiktionary wikitext parsing in `wiktionary.py`) and
+compiles them with [kindling](https://github.com/ciscoriordan/kindling).
 
 ## Lessons learned
 
@@ -71,20 +81,31 @@ with [kindling](https://github.com/ciscoriordan/kindling).
 3. Kindle does not lowercase a tapped word for a Ukrainian dictionary, so
    capitalized forms have to be indexed explicitly.
 4. The trailing «…» of prefix headwords (`авіа…`) was removed from `value`.
+5. Kindle tries the exact spelling first, so Wiktionary entries for surnames
+   and villages («Щастя», a town) hijack sentence-initial common words
+   («щастя»). They are filtered out.
+6. A lookup popup cannot follow cross-references, so in the mixed
+   dictionaries an entry that only says «same as X» gives way to a full entry
+   from the other source.
 
 ## Known gaps
 
-The source data (in every format of the upstream release) lacks all words
-starting with «п’я» (п’ять, п’ятниця…) as well as «грунт», «гудзик», «дзига».
+The SUM-11 source data (in every format of the upstream release) lacks all
+words starting with «п’я» (п’ять, п’ятниця…) as well as «грунт», «гудзик»,
+«дзига». The mixed dictionaries fill some of them from Wiktionary.
 
 ## Credits and license
 
-Data: [bakustarver/ukr-dictionaries-list-opensource](https://github.com/bakustarver/ukr-dictionaries-list-opensource).
+SUM-11 data: [bakustarver/ukr-dictionaries-list-opensource](https://github.com/bakustarver/ukr-dictionaries-list-opensource).
+[Ukrainian Wiktionary](https://uk.wiktionary.org/) by its contributors.
 Inspired by [pavlo-liapin/kindle-eng-ukr-dictionary](https://github.com/pavlo-liapin/kindle-eng-ukr-dictionary).
 Built with [kindling](https://github.com/ciscoriordan/kindling),
 [pymorphy3](https://github.com/no-plagiarism/pymorphy3) and pymorphy3-dicts-uk.
 
-Code: [AGPL-3.0](LICENSE). The rights to the SUM-11 text are not explicitly
-stated by the data source. The text is not stored in this repository and is
-only included in the free, non-commercial `.mobi` release. If you are a rights
-holder and object, please open an issue and it will be removed.
+Code: [AGPL-3.0](LICENSE). Wiktionary texts are licensed under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and the
+dictionaries containing them are distributed under the same terms. The rights
+to the SUM-11 text are not explicitly stated by the data source. The texts are
+not stored in this repository and are only included in the free,
+non-commercial `.mobi` releases. If you are a rights holder and object, please
+open an issue and they will be removed.
