@@ -33,7 +33,8 @@ Long-press a word in a Ukrainian book to see its definition.
 | | `sum11.mobi` | 131,155 | 173 MB | SUM-11 only (same as v1.0) |
 | | `wiktionary.mobi` | 19,915 | 17 MB | Ukrainian Wiktionary only |
 
-All variants find inflected forms (≈3.7M, generated with pymorphy3), capitalized
+All variants find inflected forms (≈4M, generated with pymorphy3, including
+gerunds and superlatives: «кажучи» opens «казати»), capitalized
 words at the start of a sentence, «ґ»/«г» spellings and any apostrophe. In the
 mixed dictionaries every entry ends with its source.
 
@@ -94,12 +95,28 @@ compiles them with [kindling](https://github.com/ciscoriordan/kindling).
 6. A lookup popup cannot follow cross-references, so in the mixed
    dictionaries an entry that only says «same as X» gives way to a full entry
    from the other source.
+7. pymorphy3 treats gerunds («кажучи», «побачивши») and superlatives
+   («найменший») as separate lemmas, so they are not in the verb's or
+   adjective's paradigm. In 16 novels (1.4M words) that was 1.2% of all words.
+   Gerunds are now derived from present and past forms and kept only if
+   pymorphy3 knows them; superlatives point to the comparative or positive
+   headword.
 
 ## Known gaps
 
-The SUM-11 source data (in every format of the upstream release) lacks all
-words starting with «п’я» (п’ять, п’ятниця…) as well as «грунт», «гудзик»,
-«дзига». The mixed dictionaries fill some of them from Wiktionary.
+The SUM-11 source data (in every format of the upstream release: 127,068
+records of the ~134k in print) lacks whole alphabetical blocks:
+
+- «прот…» to «пущ…» except a few words (проти, проте, професор, прохання,
+  прямо, психологія, пташка, пух);
+- part of «прост…» (простягти);
+- «замус…» to «зао…» (занадто, заняття);
+- «п’я…» and part of «п’є…» (п’ять, п’яний);
+- «об’…» and «обов’язок» (об’єкт, об’єднати);
+- single words: «грунт», «гудзик», «дзига».
+
+Tested on 16 novels, these gaps cost about 0.5% of words. The mixed dictionaries
+fill some of them («п’ять», «професор», «психологія») from Wiktionary.
 
 ## Credits and license
 
