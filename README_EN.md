@@ -19,8 +19,8 @@ Long-press a word in a Ukrainian book to see its definition.
 
 <table>
   <tr>
-    <td align="center" width="50%"><img src="docs/screenshots/popup.png" alt="Lookup popup for «скорпіон» in a book"></td>
-    <td align="center" width="50%"><img src="docs/screenshots/expanded.png" alt="Expanded entry «зверхність»"></td>
+    <td align="center" width="50%"><img src="docs/screenshots/popup.png" alt="Lookup popup for «Зверхність» in a book"></td>
+    <td align="center" width="50%"><img src="docs/screenshots/expanded.png" alt="Expanded entry «скорпіон»"></td>
   </tr>
 </table>
 

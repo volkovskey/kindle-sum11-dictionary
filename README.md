@@ -36,12 +36,12 @@
 
 <table>
   <tr>
-    <td align="center" width="50%"><img src="docs/screenshots/popup.png" alt="Спливне вікно зі статтею «скорпіон» у книжці"></td>
-    <td align="center" width="50%"><img src="docs/screenshots/expanded.png" alt="Розгорнута стаття «зверхність»"></td>
+    <td align="center" width="50%"><img src="docs/screenshots/popup.png" alt="Спливне вікно зі статтею «зверхність» у книжці"></td>
+    <td align="center" width="50%"><img src="docs/screenshots/expanded.png" alt="Розгорнута стаття «скорпіон»: значення, приклади, джерела"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Утримали палець на слові «скорпіон»</sub></td>
-    <td align="center"><sub>«Зверхність» з початку речення: розгорнута стаття</sub></td>
+    <td align="center"><sub>Утримали палець на слові «Зверхність» на початку речення</sub></td>
+    <td align="center"><sub>Розгорнута стаття: значення, приклади з відступом, автори цитат</sub></td>
   </tr>
 </table>
 
