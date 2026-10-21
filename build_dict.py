@@ -29,12 +29,14 @@ MODES = {
 }
 SUBTITLE = 'Тлумачний словник української мови'
 COVERS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'covers')
-SOURCE_NAME = {'sum11': 'СУМ-11', 'wiki': 'Вікісловник'}
+SOURCE_NAME = {'sum11': 'СУМ-11', 'wiki': 'Вікісловник', 'claude': 'Claude (ШІ)'}
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--mode', choices=[*MODES, 'all'], required=True)
 ap.add_argument('--sum', required=True, help='SUM-11 tab file')
 ap.add_argument('--wiki', required=True, help='ukwiktionary pages-articles .xml.bz2 dump')
+ap.add_argument('--claude', default=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'claude.tsv'),
+                help='definitions written by Claude for words no source has (mixed dictionaries only)')
 ap.add_argument('out')
 args = ap.parse_args()
 morph = pymorphy3.MorphAnalyzer(lang='uk')
@@ -71,14 +73,15 @@ def forms_for(word):
 
 
 SUPERLATIVE = re.compile(r'(?:як|що)?най(.+[шщч](?:ий|е)?)')
+COMPARATIVE = re.compile(r'.+(?:іш|ш)ий')
 
 
 def comparative_heads(word):
     """Headword candidates for a comparative: itself, its lemmas, the positive degree."""
     cands = [word] + [p.normal_form for p in morph.parse(word)]
     for c in list(cands):
-        if m := re.fullmatch(r'(.+?)(іш|ш)ий', c):  # гарніший, могутніший, коротший, ширший, дешевший
-            cands += [m[1] + e for e in ('ий', 'ій', 'кий', 'окий')]
+        if m := re.fullmatch(r'(.+?)(іш|ш)ий', c):  # гарніший, могутніший, коротший, ширший, дешевший, раніший
+            cands += [m[1] + e for e in ('ий', 'ій', 'кий', 'окий', 'ній')]
         elif m := re.fullmatch(r'(.+?)і?ше', c):  # частіше
             cands += [m[1] + 'о']
     return cands
@@ -91,11 +94,12 @@ def morph_extras(heads):
       every lemma with ґ gets that lemma's ґ-forms, so «ґанку» opens «ганок»;
     - gerunds, separate lemmas in pymorphy3: «кажучи», «побачивши» open the verb;
     - superlatives: «найменшого», «найчастіше» open the comparative («менший»)
-      or the positive degree, whichever is a headword.
+      or the positive degree, whichever is a headword;
+    - comparatives that are no headword: «швидший», «раніше» open «швидкий», «ранній».
     Under NO_INFL only the ґ-lemmas themselves are added. Headwords are
     spelled with ’ (as in SUM-11), pymorphy3 lemmas with '.
     """
-    g_lex, grnd, verbs, supr = {}, set(), {}, {}
+    g_lex, grnd, verbs, supr, compr = {}, set(), {}, {}, {}
     for f, tag, nf, *_ in morph.dictionary.iter_known_words(''):
         if 'ґ' in nf and 'ґ' in f:
             g_lex.setdefault(nf, set()).update(apos_variants(f))
@@ -107,6 +111,8 @@ def morph_extras(heads):
             verbs.setdefault(nf, set()).add(f)
         elif ('ADJF' in tag or 'ADVB' in tag) and SUPERLATIVE.fullmatch(nf):
             supr.setdefault(nf, set()).add(f)
+        elif 'ADJF' in tag and COMPARATIVE.fullmatch(nf) and nf.replace("'", "’") not in heads:
+            compr.setdefault(nf, set()).add(f)
     out = {}
     add = lambda head, forms: out.setdefault(head.replace("'", "’"), set()).update(forms)
     for nf, forms in g_lex.items():
@@ -128,6 +134,10 @@ def morph_extras(heads):
     for nf, forms in supr.items():
         target = next((h for h in comparative_heads(SUPERLATIVE.fullmatch(nf)[1])
                        if h.replace("'", "’") in heads), None)
+        if target:
+            add(target, set().union(*(apos_variants(f) for f in forms)))
+    for nf, forms in compr.items():
+        target = next((h for h in comparative_heads(nf)[1:] if h != nf and h.replace("'", "’") in heads), None)
         if target:
             add(target, set().union(*(apos_variants(f) for f in forms)))
     return out
@@ -172,9 +182,9 @@ def layout(head, body, src, note):
     paras = PARA.findall(body)
     rest = PARA.sub('', body).strip()
     lead = ''
-    if paras and not paras[0][0] and (src == 'sum11' or POS_ONLY.fullmatch(paras[0][1].strip())):
+    if paras and not paras[0][0] and (src in ('sum11', 'claude') or POS_ONLY.fullmatch(paras[0][1].strip())):
         lead = paras.pop(0)[1]
-        if src != 'sum11':
+        if src == 'wiki':
             lead = ' ' + lead
     lines = []
     for ex, text in paras:
@@ -322,9 +332,40 @@ def load_wiki(path, sum_entries):
         if title[:1].isupper() and key(title) in common:
             continue
         forms = set() if NO_INFL else {f.lower() for f in form_pages.get(title, ())}
+        if len(title) > 1 and title.isupper():  # an abbreviation (ШІ) is looked up in capitals
+            forms.add(title)
         res.append(dict(word=title, head=html.escape(head.upper(), quote=False), body=body,
                         src='wiki', extra=forms, weak=ref_only))
     return res, date
+
+
+GRAM_LABEL = re.compile(r'(?<![а-яіїєґ’])(ч|ж|с|мн|прийм|спол|част|виг|присл|док|недок|невідм|числ|порядк|кільк|'
+                        r'розм|перен|заст|діал|спец|техн|мед|біол|бот|зоол|фізіол|юр|військ|церк|ірон|зневажл|'
+                        r'пестл|збірн|офіц|поет|знач|ім|присудк|прикм|підсил|перев|р|в|з|до|у|стос|ч\. і ж)\.')
+SENSE_LABEL = re.compile(r'^((?:(?:невідм|розм|перен|заст|діал|спец|техн|мед|біол|бот|зоол|фізіол|юр|військ|церк|ірон|'
+                         r'зневажл|пестл|збірн|офіц|поет|перев)\.,? |у знач\. (?:ім|присудк|прикм|підсил\. част)\.,? )+)')
+
+
+def load_claude(path):
+    """Short definitions Claude wrote for words no source has: word, HEADWORD, grammar, senses split by « | »."""
+    res = []
+    if not os.path.exists(path):
+        return res
+    for line in open(path, encoding='utf-8'):
+        if line.startswith('#') or not line.strip():
+            continue
+        word, head, gram, senses = line.rstrip('\n').split('\t')
+        gram = GRAM_LABEL.sub(lambda m: f'<i>{m[0]}</i>', html.escape(gram, quote=False))
+        senses = [SENSE_LABEL.sub(lambda m: f'<i>{m[1].strip()}</i> ', html.escape(s.strip(), quote=False))
+                  for s in senses.split(' | ')]
+        if len(senses) == 1:
+            body = f'<p>, {gram} {senses[0]}</p>'
+        else:
+            body = f'<p>, {gram}</p>' + ''.join(f'<p>{i}. {s}</p>' for i, s in enumerate(senses, 1))
+        # an abbreviation (ШІ) is looked up in capitals, which no lowercase form produces
+        res.append(dict(word=word.lower(), head=html.escape(head, quote=False), body=body, src='claude',
+                        extra={word} if word != word.lower() else set()))
+    return res
 
 
 def absorb(base, others):
@@ -418,13 +459,16 @@ def write_cover(out, title, entries, counts, hybrid, wiki_date):
         'wiki': f'<p>Український Вікісловник (uk.wiktionary.org), стан на {wiki_date}. '
                 'Тексти Вікісловника поширюються за ліцензією CC BY-SA 4.0 '
                 '(creativecommons.org/licenses/by-sa/4.0), автори — дописувачі Вікісловника.</p>',
+        'claude': '<p>Короткі тлумачення слів, яких немає ні в СУМ-11, ні у Вікісловнику, написав Claude (ШІ, Anthropic); '
+                  'вони підписані «— Claude (ШІ)» і можуть містити помилки.</p>',
     }
     with open(os.path.join(out, 'cover.html'), 'w', encoding='utf-8') as fh:
         fh.write('<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/></head>'
                  f'<body><h1>{title}</h1><p><b>{SUBTITLE}</b></p>'
                  f'<p>Kindle-версія{"" if NO_INFL else " з формами слів"}: {len(entries)} статей'
-                 + (f' ({counts["sum11"]} з СУМ-11, {counts["wiki"]} з Вікісловника)' if hybrid else '') + '.</p>'
-                 + ''.join(about[s] for s in ('sum11', 'wiki') if counts[s])
+                 + (f' ({counts["sum11"]} з СУМ-11, {counts["wiki"]} з Вікісловника'
+                    + (f', {counts["claude"]} написав Claude' if counts['claude'] else '') + ')' if hybrid else '') + '.</p>'
+                 + ''.join(about[s] for s in ('sum11', 'wiki', 'claude') if counts[s])
                  + '<p>Проєкт: github.com/volkovskey/kindle-sum11-dictionary</p>'
                  '</body></html>\n')
 
@@ -436,7 +480,8 @@ def write_opf(out, flist, title, ident, counts):
                       [f'    <itemref idref="c{i}"/>' for i in range(len(flist))])
     guide = '\n'.join(f'    <reference type="index" title="IndexName" href="{f}"/>' for f in flist)
     creators = '\n'.join(f'    <dc:creator>{c}</dc:creator>' for c, s in
-                         (('Академія наук УРСР', 'sum11'), ('Дописувачі Вікісловника', 'wiki')) if counts[s])
+                         (('Академія наук УРСР', 'sum11'), ('Дописувачі Вікісловника', 'wiki'),
+                          ('Claude (ШІ, Anthropic)', 'claude')) if counts[s])
     rights = '\n    <dc:rights>Тексти Вікісловника: CC BY-SA 4.0</dc:rights>' if counts['wiki'] else ''
     opf = f'''<?xml version="1.0" encoding="utf-8"?>
 <package unique-identifier="uid" version="2.0" xmlns="http://www.idpf.org/2007/opf">
@@ -485,13 +530,15 @@ def write_opf(out, flist, title, ident, counts):
 ''')
 
 
-def build(mode, sum_entries, wiki_entries, wiki_date):
+def build(mode, sum_entries, wiki_entries, claude_entries, wiki_date):
     title, name = MODES[mode]
     # combine() adds forms to the primary entries: work on copies
     copy = lambda es: [dict(e, extra=set(e['extra'])) for e in es]
     sums, wikis = copy(sum_entries), copy(wiki_entries)
     entries = {'sum11': lambda: sums, 'wiki': lambda: wikis,
                'sum11+wiki': lambda: combine(sums, wikis), 'wiki+sum11': lambda: combine(wikis, sums)}[mode]()
+    if '+' in mode:  # Claude's definitions only fill words both sources lack
+        entries = absorb(entries, copy(claude_entries))
     if mode != 'sum11':
         entries.sort(key=lambda e: sort_key(e['word']))
     hybrid = '+' in mode
@@ -513,10 +560,12 @@ sum_entries = load_sum(args.sum)
 print('SUM-11 entries', len(sum_entries), file=sys.stderr)
 wiki_entries, wiki_date = load_wiki(args.wiki, sum_entries)
 print('Wiktionary entries', len(wiki_entries), 'as of', wiki_date, file=sys.stderr)
+claude_entries = load_claude(args.claude)
+print('Claude entries', len(claude_entries), file=sys.stderr)
 plain = lambda e: e['word'].lower().rstrip('…').strip().replace("'", "’").replace("ʼ", "’")
-extras = morph_extras({plain(e) for e in sum_entries + wiki_entries})
-for e in sum_entries + wiki_entries:
+extras = morph_extras({plain(e) for e in sum_entries + wiki_entries + claude_entries})
+for e in sum_entries + wiki_entries + claude_entries:
     e['extra'] |= extras.get(plain(e), set())
 print('extra forms for', len(extras), 'headwords', file=sys.stderr)
 for mode in (MODES if args.mode == 'all' else [args.mode]):
-    build(mode, sum_entries, wiki_entries, wiki_date)
+    build(mode, sum_entries, wiki_entries, claude_entries, wiki_date)

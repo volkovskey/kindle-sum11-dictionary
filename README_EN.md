@@ -37,15 +37,21 @@ Long-press a word in a Ukrainian book to see its definition.
 
 | | File | Entries | Size | Contents |
 |:--:|:--|--:|--:|:--|
-| ⭐ | **`sum11-wiktionary.mobi`** | 138,040 | 194&nbsp;MB | SUM-11 first, Wiktionary for words SUM-11 lacks |
-| | `wiktionary-sum11.mobi` | 138,018 | 188&nbsp;MB | Wiktionary first, SUM-11 for words Wiktionary lacks or only cross-references |
-| | `sum11.mobi` | 131,155 | 185&nbsp;MB | SUM-11 only |
-| | `wiktionary.mobi` | 19,915 | 18&nbsp;MB | Ukrainian Wiktionary only |
+| ⭐ | **`sum11-wiktionary.mobi`** | 139,422 | 198&nbsp;MB | SUM-11 first, Wiktionary for words SUM-11 lacks |
+| | `wiktionary-sum11.mobi` | 139,400 | 192&nbsp;MB | Wiktionary first, SUM-11 for words Wiktionary lacks or only cross-references |
+| | `sum11.mobi` | 131,155 | 187&nbsp;MB | SUM-11 only |
+| | `wiktionary.mobi` | 19,915 | 19&nbsp;MB | Ukrainian Wiktionary only |
 
 All variants find inflected forms (≈4M, generated with pymorphy3, including
 gerunds and superlatives: «кажучи» opens «казати»), capitalized
 words at the start of a sentence, «ґ»/«г» spellings and any apostrophe. In the
 mixed dictionaries every entry ends with its source. ⭐ marks the recommended one.
+
+The mixed dictionaries also carry ~1,400 short definitions written by Claude
+(AI, Anthropic) for words neither source has: words missing from the SUM-11
+data («проти», «прямо», «пташка») and modern vocabulary («процесор»,
+«нейромережа», «ШІ»). They are signed «— Claude (ШІ)», may contain mistakes
+and live in [`claude.tsv`](claude.tsv); please report errors in issues.
 
 SUM-11 is consistent: detailed definitions with literary examples, which is what
 you need for the rare and archaic words people usually look up. Wiktionary is
@@ -152,7 +158,7 @@ records of the ~134k in print) lacks whole alphabetical blocks:
 - single words: «грунт», «гудзик», «дзига».
 
 Tested on 16 novels, these gaps cost about 0.5% of words. The mixed dictionaries
-fill some of them («п’ять», «професор», «психологія») from Wiktionary.
+fill most of them from Wiktionary and Claude's definitions.
 
 ## Credits and license
 
@@ -166,7 +172,8 @@ Built with [kindling](https://github.com/ciscoriordan/kindling),
 
 Code: [AGPL-3.0](LICENSE). Wiktionary texts are licensed under
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and the
-dictionaries containing them are distributed under the same terms. The rights
+dictionaries containing them are distributed under the same terms, as are
+Claude's definitions in `claude.tsv` (CC BY-SA 4.0). The rights
 to the SUM-11 text are not explicitly stated by the data source. The texts are
 not stored in this repository and are only included in the free,
 non-commercial `.mobi` releases. If you are a rights holder and object, please
