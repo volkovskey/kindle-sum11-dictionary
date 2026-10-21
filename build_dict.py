@@ -271,6 +271,32 @@ def resolve_shared(groups, forms):
     print('shared forms', len(shared), 'given to one headword', moved, file=sys.stderr)
 
 
+ELIDED = re.compile(r"[а-щьюяґєії]{1,2}[’'ʼ](.+)")
+
+
+def add_elided(forms):
+    """Index «явився» for «з’явився», a form found on a Kindle with firmware 5.20.
+
+    That firmware opens nothing for a tapped word with an apostrophe inside
+    («сум’яття»), whatever the label, but drops a one-letter prefix and its
+    apostrophe the way French drops «l’»: «з’явився» is looked up as «явився».
+    The part after a short prefix is added where no headword or form has it
+    already, so it never takes a lookup from another word.
+    """
+    taken = set(forms)
+    for fs in forms.values():
+        taken.update(fs)
+    added = 0
+    for h, fs in forms.items():
+        for f in [h, *fs]:
+            m = ELIDED.fullmatch(f)
+            if m and m[1] not in taken and VALID.fullmatch(m[1]):
+                fs.append(m[1])
+                taken.add(m[1])
+                added += 1
+    print('elided forms', added, file=sys.stderr)
+
+
 def entry(group, iforms, hybrid):
     """One lookup entry for all the entries of `group`, which share a headword.
 
@@ -439,6 +465,7 @@ def write_entries(out, entries, hybrid):
         group.sort(key=lambda e: e['word'].endswith('…'))  # the word before the prefix «рентген…»
     forms = {h: group_forms(g) for h, g in groups.items()}
     resolve_shared(groups, forms)
+    add_elided(forms)
     for n, (h, group) in enumerate(groups.items(), 1):
         x = entry(group, forms[h], hybrid)
         buf.append(x)

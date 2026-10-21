@@ -146,6 +146,12 @@ compiles them with [kindling](https://github.com/ciscoriordan/kindling).
 
 ## Known gaps
 
+On firmware 5.20 (e.g. Kindle 11th generation, 2024) a word with an apostrophe
+inside («сум’яття», «здоров’я») opens nothing, whatever the dictionary stores:
+tested with ’, ', ʼ and no apostrophe. The firmware drops a one-letter prefix
+like a French «l’» («з’явився» is looked up as «явився»), so those forms are
+indexed too. Reported to kindling.
+
 The SUM-11 source data (in every format of the upstream release: 127,068
 records of the ~134k in print) lacks whole alphabetical blocks:
 
