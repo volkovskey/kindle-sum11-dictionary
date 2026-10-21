@@ -116,10 +116,10 @@
 
 | Файл | Назва в списку словників |
 |:--|:--|
-| `sum11-wiktionary.mobi` | СУМ-11 + Вікісловник: тлумачний словник |
-| `wiktionary-sum11.mobi` | Вікісловник + СУМ-11: тлумачний словник |
-| `sum11.mobi` | СУМ-11: тлумачний словник української мови |
-| `wiktionary.mobi` | Вікісловник: тлумачний словник української мови |
+| `sum11-wiktionary.mobi` | СУМ-11 + Вікісловник |
+| `wiktionary-sum11.mobi` | Вікісловник + СУМ-11 |
+| `sum11.mobi` | СУМ-11 |
+| `wiktionary.mobi` | Вікісловник |
 
 Kindle запам'ятає вибір.
 
@@ -227,7 +227,8 @@ NO_INFL=1 ./build.sh        # лише головні слова, без фор�
    (інший дамп можна вказати через `WIKI_URL`).
 2. Ставить залежності з `requirements.txt` у `.venv`.
 3. Генерує OPF і HTML скриптом `build_dict.py` у `build/<варіант>/`.
-   Розбір вікірозмітки — у `wiktionary.py`.
+   Розбір вікірозмітки — у `wiktionary.py`. Обкладинки беруться з `covers/`
+   (їх малює `make_covers.py`, у збірці він не потрібен).
 4. Збирає `.mobi` за допомогою [kindling](https://github.com/ciscoriordan/kindling).
    Бінарник завантажується автоматично, якщо `kindling-cli` немає в `PATH`.
 
@@ -370,6 +371,7 @@ work/kindling-cli-mac-apple-silicon lookup dist/sum11-wiktionary.mobi Ганко
 | **Ідея та еталон** | [pavlo-liapin/kindle-eng-ukr-dictionary](https://github.com/pavlo-liapin/kindle-eng-ukr-dictionary), англо-український словник Балла для Kindle |
 | **Збирання** | [kindling](https://github.com/ciscoriordan/kindling) (MIT) |
 | **Форми слів** | [pymorphy3](https://github.com/no-plagiarism/pymorphy3) (MIT) і [pymorphy3-dicts-uk](https://github.com/no-plagiarism/pymorphy3-dicts) (GPLv3) |
+| **Обкладинки** | Шрифт [e-Ukraine](https://thedigital.gov.ua/fonts) Міністерства цифрової трансформації України (дизайн Fedoriv, CC BY 4.0) |
 | **Діагностика** | [KindleUnpack](https://github.com/kevinhendricks/KindleUnpack) |
 
 ## Ліцензія і права на текст

@@ -145,6 +145,8 @@ fill some of them («п’ять», «професор», «психологія
 SUM-11 data: [bakustarver/ukr-dictionaries-list-opensource](https://github.com/bakustarver/ukr-dictionaries-list-opensource).
 [Ukrainian Wiktionary](https://uk.wiktionary.org/) by its contributors.
 Inspired by [pavlo-liapin/kindle-eng-ukr-dictionary](https://github.com/pavlo-liapin/kindle-eng-ukr-dictionary).
+Covers use the [e-Ukraine](https://thedigital.gov.ua/fonts) typeface by the
+Ministry of Digital Transformation of Ukraine (design by Fedoriv, CC BY 4.0).
 Built with [kindling](https://github.com/ciscoriordan/kindling),
 [pymorphy3](https://github.com/no-plagiarism/pymorphy3) and pymorphy3-dicts-uk.
 

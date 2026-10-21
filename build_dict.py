@@ -13,19 +13,22 @@ Both sources are always read: the Wiktionary capitalized-entry filter needs
 SUM-11's headwords. Compile the result with kindling (not kindlegen, see README):
        kindling-cli build <outdir>/<name>/dict.opf -o <name>.mobi
 """
-import sys, os, re, html, argparse
+import sys, os, re, html, argparse, shutil
 from collections import Counter
 import pymorphy3
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I leaves it out
 import wiktionary
 
+# titles stay short: the lookup popup cuts the dictionary name at ~30 characters
 MODES = {
-    'sum11': ('СУМ-11: тлумачний словник української мови', 'sum11'),
-    'wiki': ('Вікісловник: тлумачний словник української мови', 'wiktionary'),
-    'sum11+wiki': ('СУМ-11 + Вікісловник: тлумачний словник', 'sum11-wiktionary'),
-    'wiki+sum11': ('Вікісловник + СУМ-11: тлумачний словник', 'wiktionary-sum11'),
+    'sum11': ('СУМ-11', 'sum11'),
+    'wiki': ('Вікісловник', 'wiktionary'),
+    'sum11+wiki': ('СУМ-11 + Вікісловник', 'sum11-wiktionary'),
+    'wiki+sum11': ('Вікісловник + СУМ-11', 'wiktionary-sum11'),
 }
+SUBTITLE = 'Тлумачний словник української мови'
+COVERS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'covers')
 SOURCE_NAME = {'sum11': 'СУМ-11', 'wiki': 'Вікісловник'}
 
 ap = argparse.ArgumentParser()
@@ -418,7 +421,7 @@ def write_cover(out, title, entries, counts, hybrid, wiki_date):
     }
     with open(os.path.join(out, 'cover.html'), 'w', encoding='utf-8') as fh:
         fh.write('<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/></head>'
-                 f'<body><h1>{title}</h1>'
+                 f'<body><h1>{title}</h1><p><b>{SUBTITLE}</b></p>'
                  f'<p>Kindle-версія{"" if NO_INFL else " з формами слів"}: {len(entries)} статей'
                  + (f' ({counts["sum11"]} з СУМ-11, {counts["wiki"]} з Вікісловника)' if hybrid else '') + '.</p>'
                  + ''.join(about[s] for s in ('sum11', 'wiki') if counts[s])
@@ -441,7 +444,9 @@ def write_opf(out, flist, title, ident, counts):
     <dc:identifier id="uid">{ident}</dc:identifier>
     <dc:title>{title}</dc:title>
     <dc:language>uk</dc:language>
+    <dc:description>{SUBTITLE}</dc:description>
 {creators}{rights}
+    <meta name="cover" content="cover-image"/>
     <x-metadata>
       <DictionaryInLanguage>uk</DictionaryInLanguage>
       <DictionaryOutLanguage>uk</DictionaryOutLanguage>
@@ -453,9 +458,11 @@ def write_opf(out, flist, title, ident, counts):
   <manifest>
     <item id="css" href="style.css" media-type="text/css"/>
     <item id="cover" href="cover.html" media-type="application/xhtml+xml"/>
+    <item id="cover-image" href="cover.jpg" media-type="image/jpeg"/>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
 {manifest}
   </manifest>
-  <spine>
+  <spine toc="ncx">
 {spine}
   </spine>
   <guide>
@@ -465,6 +472,17 @@ def write_opf(out, flist, title, ident, counts):
 '''
     with open(os.path.join(out, 'dict.opf'), 'w', encoding='utf-8') as fh:
         fh.write(opf)
+    # Kindle wants a table of contents; a dictionary has one natural entry, its front page
+    with open(os.path.join(out, 'toc.ncx'), 'w', encoding='utf-8') as fh:
+        fh.write(f'''<?xml version="1.0" encoding="utf-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="uk">
+  <head><meta name="dtb:uid" content="{ident}"/></head>
+  <docTitle><text>{title}</text></docTitle>
+  <navMap>
+    <navPoint id="cover" playOrder="1"><navLabel><text>{title}</text></navLabel><content src="cover.html"/></navPoint>
+  </navMap>
+</ncx>
+''')
 
 
 def build(mode, sum_entries, wiki_entries, wiki_date):
@@ -485,6 +503,7 @@ def build(mode, sum_entries, wiki_entries, wiki_date):
     with open(os.path.join(out, 'style.css'), 'w', encoding='utf-8') as fh:
         fh.write('div{text-align:left;margin-bottom:.8em}\n')
     write_cover(out, title, entries, counts, hybrid, wiki_date)
+    shutil.copy(os.path.join(COVERS, f'{name}.jpg'), os.path.join(out, 'cover.jpg'))
     ident = 'sum11-uk-uk-kindle' if mode == 'sum11' else f'{name}-uk-uk-kindle'
     write_opf(out, files, title, ident, counts)
     print('done', mode, len(entries), 'entries in', len(files), 'files ->', out, file=sys.stderr)
