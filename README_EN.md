@@ -26,6 +26,15 @@ Long-press a word in a Ukrainian book to see its definition.
 
 ## Which file
 
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="covers/sum11-wiktionary.jpg" alt="Cover «СУМ-11 та Вікісловник»"><br><sub>⭐ <code>sum11-wiktionary.mobi</code></sub></td>
+    <td align="center" width="25%"><img src="covers/wiktionary-sum11.jpg" alt="Cover «Вікісловник та СУМ-11»"><br><sub><code>wiktionary-sum11.mobi</code></sub></td>
+    <td align="center" width="25%"><img src="covers/sum11.jpg" alt="Cover «СУМ-11»"><br><sub><code>sum11.mobi</code></sub></td>
+    <td align="center" width="25%"><img src="covers/wiktionary.jpg" alt="Cover «Вікісловник»"><br><sub><code>wiktionary.mobi</code></sub></td>
+  </tr>
+</table>
+
 | | File | Entries | Size | Contents |
 |:--:|:--|--:|--:|:--|
 | ⭐ | **`sum11-wiktionary.mobi`** | 138,040 | 194&nbsp;MB | SUM-11 first, Wiktionary for words SUM-11 lacks |

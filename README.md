@@ -51,6 +51,15 @@
 
 На сторінці [Releases](../../releases/latest) є чотири файли. Достатньо одного.
 
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="covers/sum11-wiktionary.jpg" alt="Обкладинка «СУМ-11 та Вікісловник»"><br><sub>⭐ <code>sum11-wiktionary.mobi</code></sub></td>
+    <td align="center" width="25%"><img src="covers/wiktionary-sum11.jpg" alt="Обкладинка «Вікісловник та СУМ-11»"><br><sub><code>wiktionary-sum11.mobi</code></sub></td>
+    <td align="center" width="25%"><img src="covers/sum11.jpg" alt="Обкладинка «СУМ-11»"><br><sub><code>sum11.mobi</code></sub></td>
+    <td align="center" width="25%"><img src="covers/wiktionary.jpg" alt="Обкладинка «Вікісловник»"><br><sub><code>wiktionary.mobi</code></sub></td>
+  </tr>
+</table>
+
 | | Файл | Статей | Розмір | Що всередині |
 |:--:|:--|--:|--:|:--|
 | ⭐ | **`sum11-wiktionary.mobi`** | 138&nbsp;040 | 194&nbsp;МБ | **СУМ-11, доповнений Вікісловником.** Спершу академічні тлумачення СУМ-11 (131 тис. статей), а для слів, яких у СУМ-11 немає, — Вікісловник (7 тис.) |
