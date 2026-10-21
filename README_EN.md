@@ -37,10 +37,10 @@ Long-press a word in a Ukrainian book to see its definition.
 
 | | File | Entries | Size | Contents |
 |:--:|:--|--:|--:|:--|
-| ⭐ | **`sum11-wiktionary.mobi`** | 139,422 | 198&nbsp;MB | SUM-11 first, Wiktionary for words SUM-11 lacks |
-| | `wiktionary-sum11.mobi` | 139,400 | 192&nbsp;MB | Wiktionary first, SUM-11 for words Wiktionary lacks or only cross-references |
-| | `sum11.mobi` | 131,155 | 187&nbsp;MB | SUM-11 only |
-| | `wiktionary.mobi` | 19,915 | 19&nbsp;MB | Ukrainian Wiktionary only |
+| ⭐ | **`sum11-wiktionary.mobi`** | 139,422 | 198&nbsp;MB | **SUM-11 first, then Wiktionary and Claude.**<br>• SUM-11: 131,155 entries<br>• Wiktionary: 6,885, for words SUM-11 lacks<br>• Claude (AI): 1,382, for words neither has |
+| | `wiktionary-sum11.mobi` | 139,400 | 192&nbsp;MB | **Wiktionary first, then SUM-11 and Claude.**<br>• Wiktionary: 18,186 entries<br>• SUM-11: 119,832, for words Wiktionary lacks or only cross-references<br>• Claude (AI): 1,382, for words neither has |
+| | `sum11.mobi` | 131,155 | 187&nbsp;MB | **SUM-11 only.** 131,155 entries |
+| | `wiktionary.mobi` | 19,915 | 19&nbsp;MB | **Ukrainian Wiktionary only.** 19,915 entries |
 
 All variants find inflected forms (≈4M, generated with pymorphy3, including
 gerunds and superlatives: «кажучи» opens «казати»), capitalized
