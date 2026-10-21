@@ -14,6 +14,7 @@ SUM-11's headwords. Compile the result with kindling (not kindlegen, see README)
        kindling-cli build <outdir>/<name>/dict.opf -o <name>.mobi
 """
 import sys, os, re, html, argparse
+from collections import Counter
 import pymorphy3
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I leaves it out
@@ -184,8 +185,8 @@ def layout(head, body, src, note):
                 text = short
             lines.append(f'&#160;&#160;• <font size="-1">{text}</font>')
         elif m := re.match(r'(\d+)\.', text):
-            # a blank line before every numbered sense but the first, which follows the headword
-            lines.append(('<br/>' if lines else '') + f'<b>{m[1]}.</b>' + text[m.end():])
+            # a blank line before every numbered sense but the first, which follows its headword line
+            lines.append(('<br/>' if m[1] != '1' else '') + f'<b>{m[1]}.</b>' + text[m.end():])
         elif HOMONYM.match(text):  # КОСА́² inside the КОСА́¹ record
             lines.append('<br/>' + text)
         else:
@@ -197,34 +198,92 @@ def layout(head, body, src, note):
     return lead, ''.join('<br/>' + l for l in lines)
 
 
-def entry(word, head, body, extra_forms, src='sum11', note=None):
-    word_l = word.lower()
-    iforms = set()
-    if not word.endswith('…'):
-        iforms = forms_for(word_l)
-    iforms |= apos_variants(word_l)
-    iforms.discard(word_l)
+def headword(e):
+    return e['word'].lower().rstrip('…').strip()
+
+
+def group_forms(group):
+    """Lowercase inflected forms of a group of entries sharing a headword."""
+    plain_w = headword(group[0])
+    iforms, extra_forms = set(), set()
+    for e in group:
+        word_l = e['word'].lower()
+        if not word_l.endswith('…'):
+            iforms |= forms_for(word_l)
+        iforms |= apos_variants(word_l)
+        iforms.discard(word_l)
+        extra_forms |= e['extra']
     iforms = sorted(f for f in iforms if VALID.fullmatch(f))[:MAX_IFORMS]
     if NO_INFL:
         iforms = []
-    plain_w = word_l.rstrip('…').strip()
     # a book in the older spelling writes г for ґ
     if 'ґ' in plain_w:
-        extra_forms = set(extra_forms) | {f.replace('ґ', 'г') for f in [plain_w, *iforms]}
+        extra_forms |= {f.replace('ґ', 'г') for f in [plain_w, *iforms]}
     # extra forms go after the cap so they are never cut off
-    iforms += sorted(f for f in extra_forms if VALID.fullmatch(f) and f not in iforms and f != plain_w)
+    return iforms + sorted(f for f in extra_forms if VALID.fullmatch(f) and f not in iforms and f != plain_w)
+
+
+WORDS = re.compile(r"[а-щьюяґєії’'ʼ]+")
+
+
+def resolve_shared(groups, forms):
+    """Give a form shared by several headwords to the most frequent of them.
+
+    Kindle opens one entry per lookup, the first in index order, so «мені»
+    (я, мень), «голові» (голова, гол) and «мав» (мати, манути) opened the
+    rarer word. pymorphy3 has no frequencies for Ukrainian, so a headword's
+    frequency is counted in the dictionary's own text, mostly quotations:
+    occurrences of its forms that belong to no other headword. A form stays with every owner when
+    none of them occurs.
+    """
+    owners = {}
+    for h, fs in forms.items():
+        for f in fs:
+            owners.setdefault(f, []).append(h)
+    shared = {f: hs for f, hs in owners.items() if len(hs) > 1 and f not in forms}
+    count = Counter()
+    for group in groups.values():
+        for e in group:
+            count.update(w.replace("'", '’').replace('ʼ', '’')
+                         for w in WORDS.findall(re.sub(r'<[^>]+>', ' ', e['body']).lower()))
+    score = {h: count[h] + sum(count[f] for f in fs if len(owners[f]) == 1) for h, fs in forms.items()}
+    moved = 0
+    for f, hs in shared.items():
+        best = max(hs, key=lambda h: score[h])
+        if score[best] and sorted(score[h] for h in hs)[-2] < score[best]:
+            for h in hs:
+                if h != best:
+                    forms[h].remove(f)
+            moved += 1
+    print('shared forms', len(shared), 'given to one headword', moved, file=sys.stderr)
+
+
+def entry(group, iforms, hybrid):
+    """One lookup entry for all the entries of `group`, which share a headword.
+
+    The popup shows a single entry per lookup, so homonyms («рентген» and the
+    prefix «рентген…», two Wiktionary «коса» pages) go into one entry, each
+    starting on its own headword line, after a blank line.
+    """
+    plain_w = headword(group[0])
     # Kindle does not lowercase a tapped word for a uk dictionary,
     # so a word at the start of a sentence needs its capitalized form indexed.
-    iforms += [c for c in (f[:1].upper() + f[1:] for f in [plain_w] + iforms)
-               if c not in (plain_w, *iforms)]
+    iforms = iforms + [c for c in (f[:1].upper() + f[1:] for f in [plain_w] + iforms)
+                       if c not in (plain_w, *iforms)]
     infl = ''
     if iforms:
         infl = '<idx:infl>' + ''.join(
             f'<idx:iform value="{html.escape(f, quote=True)}"/>' for f in iforms) + '</idx:infl>'
     w = html.escape(plain_w, quote=True)
-    lead, lines = layout(head, body, src, note)
-    return (f'<idx:entry name="default" scriptable="yes"><div align="left">'
-            f'<idx:orth value="{w}"><b>{head}</b>{infl}</idx:orth>{lead}{lines}'
+    # in a mixed dictionary, sign each part if the sources differ, else just the end
+    mixed = len({e['src'] for e in group}) > 1
+    text = ''
+    for i, e in enumerate(group):
+        note = SOURCE_NAME[e['src']] if hybrid and (mixed or i == len(group) - 1) else None
+        lead, lines = layout(e['head'], e['body'], e['src'], note)
+        text += (f'<idx:orth value="{w}"><b>{e["head"]}</b>{infl}</idx:orth>' if i == 0
+                 else f'<br/><br/><b>{e["head"]}</b>') + lead + lines
+    return (f'<idx:entry name="default" scriptable="yes"><div align="left">{text}'
             f'</div><mbp:pagebreak/></idx:entry>\n')
 
 
@@ -329,9 +388,15 @@ def write_entries(out, entries, hybrid):
         files.append(name)
         buf, size = [], 0
 
-    for n, e in enumerate(entries, 1):
-        x = entry(e['word'], e['head'], e['body'], e['extra'], e['src'],
-                  SOURCE_NAME[e['src']] if hybrid else None)
+    groups = {}
+    for e in entries:
+        groups.setdefault(headword(e), []).append(e)
+    for group in groups.values():
+        group.sort(key=lambda e: e['word'].endswith('…'))  # the word before the prefix «рентген…»
+    forms = {h: group_forms(g) for h, g in groups.items()}
+    resolve_shared(groups, forms)
+    for n, (h, group) in enumerate(groups.items(), 1):
+        x = entry(group, forms[h], hybrid)
         buf.append(x)
         size += len(x.encode('utf-8'))
         if size > LIMIT:
@@ -339,6 +404,7 @@ def write_entries(out, entries, hybrid):
         if n % 20000 == 0:
             print('entries', n, file=sys.stderr)
     flush()
+    print('lookup entries', len(groups), file=sys.stderr)
     return files
 
 

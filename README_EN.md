@@ -106,6 +106,11 @@ compiles them with [kindling](https://github.com/ciscoriordan/kindling).
    `<div align="left">` of `<br/>`-separated lines styled only with `<b>`,
    `<i>` and `<font size>`: grammar on the headword line, bold sense numbers,
    smaller indented examples with citations shortened to the author.
+9. A form shared by two words opens the first entry in index order, so «мені»
+   opened «мень» (a fish) instead of «я». pymorphy3 has no Ukrainian
+   frequencies, so each headword's frequency is counted in the dictionary's
+   own text (7.6M words, 5M of them in quotations), and a shared form goes to the more frequent word.
+   Entries with the same headword («рентген», «рентген…») are merged into one.
 
 ## Known gaps
 
