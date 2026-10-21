@@ -150,7 +150,54 @@ def clean(v):
     return v
 
 
-def entry(word, head, body, extra_forms):
+PARA = re.compile(r'<p( class="ex")?>(.*?)</p>', re.S)
+CITATION = re.compile(r'\(([^(),]+),[^()]*\b1[789]\d\d\b[^()]*\)')
+HOMONYM = re.compile(r'<b>[А-ЯІЇЄҐ’\u0301-]+[¹²³⁴⁵]')
+POS_ONLY = re.compile(r'(?:<i>[^<]*</i>\s*)+')
+
+
+def layout(head, body, src, note):
+    """Entry text as the lookup popup renders it.
+
+    The popup applies no stylesheet (kindling strips classes too) and indents and
+    justifies every <p>, so an entry is one left-aligned block of <br/>-separated
+    lines styled only with tags the popup honors: <b>, <i>, <font size>.
+    The grammar that SUM-11 prints after the headword («, а, ч., зоол.»), or
+    Wiktionary's part of speech, stays on the headword line.
+    """
+    paras = PARA.findall(body)
+    rest = PARA.sub('', body).strip()
+    lead = ''
+    if paras and not paras[0][0] and (src == 'sum11' or POS_ONLY.fullmatch(paras[0][1].strip())):
+        lead = paras.pop(0)[1]
+        if src != 'sum11':
+            lead = ' ' + lead
+    lines = []
+    for ex, text in paras:
+        text = text.strip()
+        if ex and text.startswith('Син.:'):
+            lines.append(f'<font size="-1">{text}</font>')
+        elif ex:
+            # «(Сенч., На Бат. горі, 1960, 32)» -> «(Сенч.)»: volume, year and page mean nothing in a popup
+            short = CITATION.sub(r'(\1)', text)
+            if all(short.count(f'<{t}>') == short.count(f'</{t}>') for t in 'ib'):  # a citation can hold a stray tag
+                text = short
+            lines.append(f'&#160;&#160;• <font size="-1">{text}</font>')
+        elif m := re.match(r'(\d+)\.', text):
+            # a blank line before every numbered sense but the first, which follows the headword
+            lines.append(('<br/>' if lines else '') + f'<b>{m[1]}.</b>' + text[m.end():])
+        elif HOMONYM.match(text):  # КОСА́² inside the КОСА́¹ record
+            lines.append('<br/>' + text)
+        else:
+            lines.append(re.sub(r'^//', '<b>//</b>', text))
+    if rest:
+        lines.append(rest)
+    if note:
+        lines.append(f'<br/><font size="-1"><i>— {note}</i></font>')
+    return lead, ''.join('<br/>' + l for l in lines)
+
+
+def entry(word, head, body, extra_forms, src='sum11', note=None):
     word_l = word.lower()
     iforms = set()
     if not word.endswith('…'):
@@ -175,9 +222,10 @@ def entry(word, head, body, extra_forms):
         infl = '<idx:infl>' + ''.join(
             f'<idx:iform value="{html.escape(f, quote=True)}"/>' for f in iforms) + '</idx:infl>'
     w = html.escape(plain_w, quote=True)
-    return (f'<idx:entry name="default" scriptable="yes">'
-            f'<h5><dt><idx:orth value="{w}">{head}{infl}</idx:orth></dt></h5>'
-            f'<dd>{body}</dd><mbp:pagebreak/></idx:entry>\n')
+    lead, lines = layout(head, body, src, note)
+    return (f'<idx:entry name="default" scriptable="yes"><div align="left">'
+            f'<idx:orth value="{w}"><b>{head}</b>{infl}</idx:orth>{lead}{lines}'
+            f'</div><mbp:pagebreak/></idx:entry>\n')
 
 
 # ---- sources: dicts with word, head (HTML), body (HTML), src, extra (set of forms)
@@ -282,10 +330,8 @@ def write_entries(out, entries, hybrid):
         buf, size = [], 0
 
     for n, e in enumerate(entries, 1):
-        body = e['body']
-        if hybrid:
-            body += f'<p><i>— {SOURCE_NAME[e["src"]]}</i></p>'
-        x = entry(e['word'], e['head'], body, e['extra'])
+        x = entry(e['word'], e['head'], e['body'], e['extra'], e['src'],
+                  SOURCE_NAME[e['src']] if hybrid else None)
         buf.append(x)
         size += len(x.encode('utf-8'))
         if size > LIMIT:
@@ -371,7 +417,7 @@ def build(mode, sum_entries, wiki_entries, wiki_date):
     os.makedirs(out, exist_ok=True)
     files = write_entries(out, entries, hybrid)
     with open(os.path.join(out, 'style.css'), 'w', encoding='utf-8') as fh:
-        fh.write('p{margin:0 0 .3em 0}\np.ex{margin-left:1em;font-size:90%}\nhr{margin:.4em 0}\n')
+        fh.write('div{text-align:left;margin-bottom:.8em}\n')
     write_cover(out, title, entries, counts, hybrid, wiki_date)
     ident = 'sum11-uk-uk-kindle' if mode == 'sum11' else f'{name}-uk-uk-kindle'
     write_opf(out, files, title, ident, counts)

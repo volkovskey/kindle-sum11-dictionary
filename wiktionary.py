@@ -103,7 +103,7 @@ class Renderer:
 
     def inline(self, s):
         s = html.unescape(s.replace('&nbsp;', ' '))
-        s = re.sub(r'\[\[(?:[^\]|]*\|)?([^\]]*)\]\]', r'\1', s)
+        s = re.sub(r'\[\[(?:[^\]|]*\|)?(?::?[a-z]+:)?([^\]]*)\]\]', r'\1', s)  # [[w:Іван Франко]] -> Іван Франко
         s = re.sub(r'\[https?://\S+ ([^\]]*)\]', r'\1', s)
         s = re.sub(r'<[^>]+>', '', s)
         s = html.escape(s, quote=False)

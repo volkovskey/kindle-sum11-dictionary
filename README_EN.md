@@ -101,6 +101,11 @@ compiles them with [kindling](https://github.com/ciscoriordan/kindling).
    Gerunds are now derived from present and past forms and kept only if
    pymorphy3 knows them; superlatives point to the comparative or positive
    headword.
+8. The lookup popup applies no stylesheet (and kindling strips `class`), so
+   every `<p>` gets a first-line indent and justified text. Entries are one
+   `<div align="left">` of `<br/>`-separated lines styled only with `<b>`,
+   `<i>` and `<font size>`: grammar on the headword line, bold sense numbers,
+   smaller indented examples with citations shortened to the author.
 
 ## Known gaps
 
