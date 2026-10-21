@@ -28,14 +28,21 @@ Long-press a word in a Ukrainian book to see its definition.
 
 | | File | Entries | Size | Contents |
 |:--:|:--|--:|--:|:--|
-| ⭐ | **`wiktionary-sum11.mobi`** (recommended) | 138,018 | 174 MB | Wiktionary first, SUM-11 for words Wiktionary lacks or only cross-references |
-| | `sum11-wiktionary.mobi` | 138,040 | 180 MB | SUM-11 first, Wiktionary for words SUM-11 lacks |
+| ⭐ | **`sum11-wiktionary.mobi`** (recommended) | 138,040 | 180 MB | SUM-11 first, Wiktionary for words SUM-11 lacks |
+| | `wiktionary-sum11.mobi` | 138,018 | 174 MB | Wiktionary first, SUM-11 for words Wiktionary lacks or only cross-references |
 | | `sum11.mobi` | 131,155 | 173 MB | SUM-11 only (same as v1.0) |
 | | `wiktionary.mobi` | 19,915 | 17 MB | Ukrainian Wiktionary only |
 
 All variants find inflected forms (≈3.7M, generated with pymorphy3), capitalized
 words at the start of a sentence, «ґ»/«г» spellings and any apostrophe. In the
 mixed dictionaries every entry ends with its source.
+
+SUM-11 is consistent: detailed definitions with literary examples, which is what
+you need for the rare and archaic words people usually look up. Wiktionary is
+uneven, so in the recommended file it only adds words SUM-11 lacks («інтернет»,
+«ґрунт», «п’ять»). Pick `wiktionary-sum11.mobi` if you prefer modern
+definitions over detail, e.g. to avoid Soviet-era wording for the words
+Wiktionary covers.
 
 ## Install
 
