@@ -66,19 +66,66 @@ def forms_for(word):
     return out
 
 
-def g_forms():
-    """Modern ґ-spellings for SUM-11 headwords, which are written with г.
+SUPERLATIVE = re.compile(r'(?:як|що)?най(.+[шщч](?:ий|е)?)')
 
-    Maps the г-spelling of every pymorphy3 lemma with ґ to that lemma's
-    ґ-forms (just the lemma itself under NO_INFL), so «ґанку» opens «ганок».
+
+def comparative_heads(word):
+    """Headword candidates for a comparative: itself, its lemmas, the positive degree."""
+    cands = [word] + [p.normal_form for p in morph.parse(word)]
+    for c in list(cands):
+        if m := re.fullmatch(r'(.+?)(іш|ш)ий', c):  # гарніший, могутніший, коротший, ширший, дешевший
+            cands += [m[1] + e for e in ('ий', 'ій', 'кий', 'окий')]
+        elif m := re.fullmatch(r'(.+?)і?ше', c):  # частіше
+            cands += [m[1] + 'о']
+    return cands
+
+
+def morph_extras(heads):
+    """Extra forms pymorphy3 keeps apart from a headword's lexeme, by headword.
+
+    - modern ґ-spellings for SUM-11 headwords written with г: the г-spelling of
+      every lemma with ґ gets that lemma's ґ-forms, so «ґанку» opens «ганок»;
+    - gerunds, separate lemmas in pymorphy3: «кажучи», «побачивши» open the verb;
+    - superlatives: «найменшого», «найчастіше» open the comparative («менший»)
+      or the positive degree, whichever is a headword.
+    Under NO_INFL only the ґ-lemmas themselves are added. Headwords are
+    spelled with ’ (as in SUM-11), pymorphy3 lemmas with '.
     """
-    lex = {}
-    for f, _, nf, *_ in morph.dictionary.iter_known_words(''):
+    g_lex, grnd, verbs, supr = {}, set(), {}, {}
+    for f, tag, nf, *_ in morph.dictionary.iter_known_words(''):
         if 'ґ' in nf and 'ґ' in f:
-            lex.setdefault(nf, set()).update(apos_variants(f))
+            g_lex.setdefault(nf, set()).update(apos_variants(f))
+        if NO_INFL:
+            continue
+        if 'GRND' in tag:
+            grnd.add(f)
+        elif 'VERB' in tag and ('past' in tag and 'masc' in tag or 'pres' in tag and '3per' in tag and 'plur' in tag):
+            verbs.setdefault(nf, set()).add(f)
+        elif ('ADJF' in tag or 'ADVB' in tag) and SUPERLATIVE.fullmatch(nf):
+            supr.setdefault(nf, set()).add(f)
     out = {}
-    for nf, forms in lex.items():
-        out.setdefault(nf.replace('ґ', 'г'), set()).update({nf} if NO_INFL else forms)
+    add = lambda head, forms: out.setdefault(head.replace("'", "’"), set()).update(forms)
+    for nf, forms in g_lex.items():
+        add(nf.replace('ґ', 'г'), {nf} if NO_INFL else forms)
+    for nf, forms in verbs.items():
+        # дивився -> дивившись, побачив -> побачивши, кажуть -> кажучи, дивляться -> дивлячись
+        cands = set()
+        for f in forms:
+            refl = f.endswith(('ся', 'сь'))
+            stem = f[:-2] if refl else f
+            if stem.endswith('ть'):
+                stem = stem[:-2] + 'чи'
+            else:
+                stem += 'ши'
+            cands |= {stem + 'сь', stem + 'ся'} if refl else {stem}
+        found = cands & grnd
+        if found:
+            add(nf, set().union(*(apos_variants(f) for f in found)))
+    for nf, forms in supr.items():
+        target = next((h for h in comparative_heads(SUPERLATIVE.fullmatch(nf)[1])
+                       if h.replace("'", "’") in heads), None)
+        if target:
+            add(target, set().union(*(apos_variants(f) for f in forms)))
     return out
 
 
@@ -136,7 +183,6 @@ def entry(word, head, body, extra_forms):
 # ---- sources: dicts with word, head (HTML), body (HTML), src, extra (set of forms)
 
 def load_sum(path):
-    g = g_forms()
     res = []
     for line in open(path, encoding='utf-8'):
         if line.startswith('##'):
@@ -152,7 +198,7 @@ def load_sum(path):
             plain = w.lower().rstrip('…').strip()
             res.append(dict(word=w, head=m.group(1) if m else html.escape(plain),
                             body=('<p>' + body[m.end():]) if m else body,
-                            src='sum11', extra=set(g.get(plain, ()))))
+                            src='sum11', extra=set()))
     return res
 
 
@@ -336,5 +382,10 @@ sum_entries = load_sum(args.sum)
 print('SUM-11 entries', len(sum_entries), file=sys.stderr)
 wiki_entries, wiki_date = load_wiki(args.wiki, sum_entries)
 print('Wiktionary entries', len(wiki_entries), 'as of', wiki_date, file=sys.stderr)
+plain = lambda e: e['word'].lower().rstrip('…').strip().replace("'", "’").replace("ʼ", "’")
+extras = morph_extras({plain(e) for e in sum_entries + wiki_entries})
+for e in sum_entries + wiki_entries:
+    e['extra'] |= extras.get(plain(e), set())
+print('extra forms for', len(extras), 'headwords', file=sys.stderr)
 for mode in (MODES if args.mode == 'all' else [args.mode]):
     build(mode, sum_entries, wiki_entries, wiki_date)
