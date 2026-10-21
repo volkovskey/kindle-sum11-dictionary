@@ -28,10 +28,10 @@ Long-press a word in a Ukrainian book to see its definition.
 
 <table>
   <tr>
-    <td align="center" width="25%"><img src="covers/sum11-wiktionary.jpg" alt="Cover «СУМ-11 та Вікісловник»"><br><sub>⭐ <code>sum11-wiktionary.mobi</code></sub></td>
-    <td align="center" width="25%"><img src="covers/wiktionary-sum11.jpg" alt="Cover «Вікісловник та СУМ-11»"><br><sub><code>wiktionary-sum11.mobi</code></sub></td>
-    <td align="center" width="25%"><img src="covers/sum11.jpg" alt="Cover «СУМ-11»"><br><sub><code>sum11.mobi</code></sub></td>
-    <td align="center" width="25%"><img src="covers/wiktionary.jpg" alt="Cover «Вікісловник»"><br><sub><code>wiktionary.mobi</code></sub></td>
+    <td align="center" width="25%"><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/sum11-wiktionary.mobi"><img src="covers/sum11-wiktionary.jpg" alt="Cover «СУМ-11 та Вікісловник»"></a><br><sub>⭐ <a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/sum11-wiktionary.mobi"><code>sum11-wiktionary.mobi</code></a></sub></td>
+    <td align="center" width="25%"><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/wiktionary-sum11.mobi"><img src="covers/wiktionary-sum11.jpg" alt="Cover «Вікісловник та СУМ-11»"></a><br><sub><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/wiktionary-sum11.mobi"><code>wiktionary-sum11.mobi</code></a></sub></td>
+    <td align="center" width="25%"><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/sum11.mobi"><img src="covers/sum11.jpg" alt="Cover «СУМ-11»"></a><br><sub><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/sum11.mobi"><code>sum11.mobi</code></a></sub></td>
+    <td align="center" width="25%"><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/wiktionary.mobi"><img src="covers/wiktionary.jpg" alt="Cover «Вікісловник»"></a><br><sub><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/wiktionary.mobi"><code>wiktionary.mobi</code></a></sub></td>
   </tr>
 </table>
 
@@ -132,6 +132,11 @@ compiles them with [kindling](https://github.com/ciscoriordan/kindling).
    frequencies, so each headword's frequency is counted in the dictionary's
    own text (7.6M words, 5M of them in quotations), and a shared form goes to the more frequent word.
    Entries with the same headword («рентген», «рентген…») are merged into one.
+10. kindling stores the dictionary identifier in the ASIN records (EXTH 113
+    and 504). A Kindle that sees an ASIN looks the cover up in the Amazon store
+    and shows a blank library tile. `library_cover.py` renames both records
+    after the build; on a Kindle the cover then shows, and lookups and
+    Vocabulary Builder keep working.
 
 ## Known gaps
 

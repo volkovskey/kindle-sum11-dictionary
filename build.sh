@@ -61,5 +61,6 @@ for opf in "$out"/*/dict.opf; do
     name=$(basename "$(dirname "$opf")")
     echo ">> compiling dist/$name$suffix.mobi"
     "$KINDLING" build "$opf" -o "dist/$name$suffix.mobi"
+    .venv/bin/python -I library_cover.py "dist/$name$suffix.mobi"
 done
 ls -l dist/

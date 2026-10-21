@@ -53,10 +53,10 @@
 
 <table>
   <tr>
-    <td align="center" width="25%"><img src="covers/sum11-wiktionary.jpg" alt="Обкладинка «СУМ-11 та Вікісловник»"><br><sub>⭐ <code>sum11-wiktionary.mobi</code></sub></td>
-    <td align="center" width="25%"><img src="covers/wiktionary-sum11.jpg" alt="Обкладинка «Вікісловник та СУМ-11»"><br><sub><code>wiktionary-sum11.mobi</code></sub></td>
-    <td align="center" width="25%"><img src="covers/sum11.jpg" alt="Обкладинка «СУМ-11»"><br><sub><code>sum11.mobi</code></sub></td>
-    <td align="center" width="25%"><img src="covers/wiktionary.jpg" alt="Обкладинка «Вікісловник»"><br><sub><code>wiktionary.mobi</code></sub></td>
+    <td align="center" width="25%"><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/sum11-wiktionary.mobi"><img src="covers/sum11-wiktionary.jpg" alt="Обкладинка «СУМ-11 та Вікісловник»"></a><br><sub>⭐ <a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/sum11-wiktionary.mobi"><code>sum11-wiktionary.mobi</code></a></sub></td>
+    <td align="center" width="25%"><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/wiktionary-sum11.mobi"><img src="covers/wiktionary-sum11.jpg" alt="Обкладинка «Вікісловник та СУМ-11»"></a><br><sub><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/wiktionary-sum11.mobi"><code>wiktionary-sum11.mobi</code></a></sub></td>
+    <td align="center" width="25%"><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/sum11.mobi"><img src="covers/sum11.jpg" alt="Обкладинка «СУМ-11»"></a><br><sub><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/sum11.mobi"><code>sum11.mobi</code></a></sub></td>
+    <td align="center" width="25%"><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/wiktionary.mobi"><img src="covers/wiktionary.jpg" alt="Обкладинка «Вікісловник»"></a><br><sub><a href="https://github.com/volkovskey/kindle-sum11-dictionary/releases/latest/download/wiktionary.mobi"><code>wiktionary.mobi</code></a></sub></td>
   </tr>
 </table>
 
@@ -240,6 +240,7 @@ NO_INFL=1 ./build.sh        # лише головні слова, без фор�
    (їх малює `make_covers.py`, у збірці він не потрібен).
 4. Збирає `.mobi` за допомогою [kindling](https://github.com/ciscoriordan/kindling).
    Бінарник завантажується автоматично, якщо `kindling-cli` немає в `PATH`.
+   Потім `library_cover.py` прибирає з файлу ASIN, щоб Kindle показував обкладинку.
 
 Повна збірка всіх чотирьох варіантів триває кілька хвилин.
 
@@ -341,6 +342,14 @@ work/kindling-cli-mac-apple-silicon lookup dist/sum11-wiktionary.mobi Ганко
 | **Симптом** | «мені» відкриває «мень» (рибу), «голові» — «гол», «мав» — «манути», «була» — «булий» |
 | **Причина** | Форма належить кільком словам, а Kindle відкриває першу за алфавітом статтю. У pymorphy3 для української немає частот, тож усі розбори для нього рівноцінні. Таких форм ~25 тис., і це 4% слів у художніх книжках |
 | **Рішення** | Частоту слова рахувати в тексті самого словника (≈7,6 млн слів, з них ≈5 млн у цитатах): скільки разів трапляються його форми, які не належать жодному іншому слову. Спільну форму отримує частіше слово, решта її втрачають. У рекомендованому словнику так розв'язано 22,8 тис. форм із 24,9 тис.; якщо частот немає, форма лишається за всіма |
+
+### 11. Обкладинка в бібліотеці
+
+|  |  |
+|:--|:--|
+| **Симптом** | Обкладинка є у файлі, але в бібліотеці Kindle замість неї порожня плитка, навіть після перезавантаження |
+| **Причина** | kindling записує ідентифікатор словника в поля ASIN (EXTH 113 і 504). Побачивши ASIN, Kindle шукає обкладинку в магазині Amazon, нічого не знаходить і не бере ту, що у файлі |
+| **Рішення** | Після збирання `library_cover.py` перейменовує ці два поля в невідомі Kindle (9113, 9504), не змінюючи довжини файлу. Перевірено на Kindle: обкладинка з'являється, пошук і Vocabulary Builder працюють |
 
 <a id="limits"></a>
 ## Відомі обмеження
