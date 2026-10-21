@@ -62,6 +62,18 @@ Wiktionary covers.
 Kindle has no Ukrainian keyboard, so typing searches inside the dictionary is
 limited. Lookups from books work fully.
 
+## Update
+
+Copying a new version over the old file is not enough: the Kindle keeps a
+`.sdr` folder with its own data next to the dictionary. Delete it together with
+the old file so nothing of the previous version is left.
+
+1. Connect the Kindle over USB as above.
+2. In `documents/dictionaries`, delete the old dictionary and its `.sdr`
+   folder, e.g. `sum11-wiktionary.mobi` and `sum11-wiktionary.sdr/`. Leave
+   everything else alone.
+3. Install the new version following the steps above.
+
 ## Build
 
 ```sh
