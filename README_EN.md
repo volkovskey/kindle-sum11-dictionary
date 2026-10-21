@@ -28,15 +28,15 @@ Long-press a word in a Ukrainian book to see its definition.
 
 | | File | Entries | Size | Contents |
 |:--:|:--|--:|--:|:--|
-| ⭐ | **`sum11-wiktionary.mobi`** (recommended) | 138,040 | 180 MB | SUM-11 first, Wiktionary for words SUM-11 lacks |
-| | `wiktionary-sum11.mobi` | 138,018 | 174 MB | Wiktionary first, SUM-11 for words Wiktionary lacks or only cross-references |
-| | `sum11.mobi` | 131,155 | 173 MB | SUM-11 only (same as v1.0) |
-| | `wiktionary.mobi` | 19,915 | 17 MB | Ukrainian Wiktionary only |
+| ⭐ | **`sum11-wiktionary.mobi`** | 138,040 | 194&nbsp;MB | SUM-11 first, Wiktionary for words SUM-11 lacks |
+| | `wiktionary-sum11.mobi` | 138,018 | 188&nbsp;MB | Wiktionary first, SUM-11 for words Wiktionary lacks or only cross-references |
+| | `sum11.mobi` | 131,155 | 185&nbsp;MB | SUM-11 only |
+| | `wiktionary.mobi` | 19,915 | 18&nbsp;MB | Ukrainian Wiktionary only |
 
 All variants find inflected forms (≈4M, generated with pymorphy3, including
 gerunds and superlatives: «кажучи» opens «казати»), capitalized
 words at the start of a sentence, «ґ»/«г» spellings and any apostrophe. In the
-mixed dictionaries every entry ends with its source.
+mixed dictionaries every entry ends with its source. ⭐ marks the recommended one.
 
 SUM-11 is consistent: detailed definitions with literary examples, which is what
 you need for the rare and archaic words people usually look up. Wiktionary is
@@ -56,8 +56,8 @@ Wiktionary covers.
    the file into the dictionaries folder.
 3. Open the dictionary once from the library like a regular book, then close
    it. Without this, some Kindles report "no definition found" on lookups.
-4. In a Ukrainian book, long-press a word. If another dictionary opens, tap its
-   name in the popup and pick the one you installed.
+4. In a Ukrainian book, long-press a word. If another dictionary opens, tap
+   **⋮** in the popup → **Change Dictionary** and pick the one you installed.
 
 Kindle has no Ukrainian keyboard, so typing searches inside the dictionary is
 limited. Lookups from books work fully.
