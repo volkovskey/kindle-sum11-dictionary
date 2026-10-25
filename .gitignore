@@ -15,3 +15,6 @@ __pycache__/
 .DS_Store
 *.log
 dist/
+
+# Claude Code
+CLAUDE.md
