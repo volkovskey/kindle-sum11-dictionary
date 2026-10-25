@@ -37,6 +37,8 @@ ap.add_argument('--sum', required=True, help='SUM-11 tab file')
 ap.add_argument('--wiki', required=True, help='ukwiktionary pages-articles .xml.bz2 dump')
 ap.add_argument('--claude', default=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'claude.tsv'),
                 help='definitions written by Claude for words no source has (mixed dictionaries only)')
+ap.add_argument('--variants', default=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'variants.tsv'),
+                help='other spellings of headwords, indexed with all their forms')
 ap.add_argument('out')
 args = ap.parse_args()
 morph = pymorphy3.MorphAnalyzer(lang='uk')
@@ -70,6 +72,32 @@ def forms_for(word):
     for f in forms:
         out |= apos_variants(f)
     return out
+
+
+def variant_forms(head, variant):
+    """Forms of `variant`, another spelling of `head`, made from the forms of `head`.
+
+    Books write the western «войта» for «війта» or «шклисті» for «склисті»;
+    pymorphy3 knows neither, so the differing part of the headword is swapped in
+    each of its forms: «війт» -> «войт» turns «війтові» into «войтові».
+    """
+    p = os.path.commonprefix([head, variant])
+    s = len(os.path.commonprefix([head[len(p):][::-1], variant[len(p):][::-1]]))
+    stem, new = head[:len(head) - s], variant[:len(variant) - s]
+    return {variant} | {new + f[len(stem):] for f in forms_for(head) if f.startswith(stem)}
+
+
+def load_variants(path):
+    """{headword: forms of its other spellings} from lines «headword<TAB>variant»."""
+    res = {}
+    if not os.path.exists(path):
+        return res
+    for line in open(path, encoding='utf-8'):
+        if line.startswith('#') or not line.strip():
+            continue
+        head, variant = line.rstrip('\n').split('\t')
+        res.setdefault(head, set()).update(*(apos_variants(f) for f in variant_forms(head, variant)))
+    return res
 
 
 SUPERLATIVE = re.compile(r'(?:як|що)?най(.+[шщч](?:ий|е)?)')
@@ -231,7 +259,7 @@ def group_forms(group):
         iforms = []
     # a book in the older spelling writes г for ґ
     if 'ґ' in plain_w:
-        extra_forms |= {f.replace('ґ', 'г') for f in [plain_w, *iforms]}
+        extra_forms |= {f.replace('ґ', 'г') for f in [plain_w, *iforms, *extra_forms]}
     # extra forms go after the cap so they are never cut off
     return iforms + sorted(f for f in extra_forms if VALID.fullmatch(f) and f not in iforms and f != plain_w)
 
@@ -348,6 +376,100 @@ def load_sum(path):
     return res
 
 
+REF = re.compile(r'(?:Те саме, що|[Дд]ив\.)\s*(?:<i>[^<]*</i>\s*)?<b>([^<]+?)([¹²³⁴⁵])?</b>(?:\s*(\d+))?')
+BARE = re.compile(r'([А-ЯІЇЄҐ][а-яіїєґ’́-]+)\.')
+TAGS = re.compile(r'<[^>]+>')
+CAPITAL = re.compile(r'[А-ЯІЇЄҐ]')
+SENSE = re.compile(r'\s*\d+\.\s*')
+IDIOM = re.compile(r'\s*(?:<[^>]+>\s*)*[◊∆]')
+
+
+def senses(paras):
+    """The definition paragraphs of `paras`, up to the idioms (◊, ∆) at the end of an entry."""
+    defs = [(ex, t) for ex, t in paras if not ex]
+    return defs[:next((i for i, (_, t) in enumerate(defs) if IDIOM.match(t)), len(defs))]
+
+
+def reference(paras):
+    """(word, homonym, sense) that a SUM-11 entry only points to, or None.
+
+    `paras` are the entry's (class, text) paragraphs. The entry has one
+    definition and it is «Те саме, що <b>X</b>», «див. <b>X</b>» or a bare
+    synonym after the grammar («, и, <i>ж., заст.</i> Корогва.»).
+    """
+    defs = [t.strip() for _, t in senses(paras)]
+    # one definition, maybe after a line of grammar only («, и́, <i>ж</i>.»)
+    if not 0 < len(defs) < 3 or len(defs) == 2 and CAPITAL.search(TAGS.sub('', defs[0])):
+        return None
+    text = defs[-1]
+    if (m := REF.search(text)) and not CAPITAL.search(TAGS.sub('', text[:m.start()])) \
+            and not TAGS.sub('', text[m.end():]).strip(' .;'):
+        return m[1].replace('́', '').lower(), m[2], m[3]
+    plain = TAGS.sub('', text)
+    if (m := BARE.search(plain)) and m.end() == len(plain) and not CAPITAL.search(plain[:m.start()]):
+        return m[1].replace('́', '').lower(), None, None
+    return None
+
+
+def definitions(e, homonym, sense):
+    """The definition paragraphs (no examples) of entry `e`: of one homonym and one sense if given."""
+    segments, cur = [], [e['head'], []]
+    for ex, t in PARA.findall(e['body']):
+        if not ex and HOMONYM.match(t):
+            segments.append(cur)
+            b = re.match(r'<b>([^<]*)</b>', t)
+            cur = [b[1], [('', t[b.end():])]]
+        elif not ex:
+            cur[1].append((ex, t))
+    segments.append(cur)
+    head, paras = next((s for s in segments if homonym and s[0].endswith(homonym)), segments[0])
+    # idioms belong to the target word, not to the one that points to it
+    paras = senses(paras)
+    if sense:
+        start = next((i for i, (_, t) in enumerate(paras) if re.match(rf'\s*{sense}\.', t)), None)
+        if start is not None:
+            end = next((i for i in range(start + 1, len(paras)) if SENSE.match(paras[i][1])), len(paras))
+            # the grammar line, then the sense without its number
+            paras = paras[:1] * (start > 0) + [('', SENSE.sub('', paras[start][1], 1))] + paras[start + 1:end]
+    return head, paras
+
+
+def expand_references(entries):
+    """Put the definition of the word an entry only points to into the entry itself.
+
+    A lookup popup cannot follow «Те саме, що <b>корогва́</b>», so «хоругва»
+    told only that it is an old word for another. The target's definitions,
+    without examples, go right after the reference, following up to three hops
+    of references to references.
+    """
+    by_key = {}
+    for e in entries:
+        by_key.setdefault(key(e['word']), e)
+    done = 0
+    for e in entries:
+        paras = PARA.findall(e['body'])
+        ref, seen, target = reference(paras), {key(e['word'])}, None
+        while ref and key(ref[0]) not in seen and key(ref[0]) in by_key and len(seen) < 4:
+            t = by_key[key(ref[0])]
+            seen.add(key(ref[0]))
+            target = definitions(t, ref[1], ref[2])
+            ref = reference(target[1])
+        if not target or not any(TAGS.sub('', p).strip(' ,.') for _, p in target[1]):
+            continue
+        head, tparas = target
+        texts = [p for _, p in tparas]
+        # «→ КОРОГВА́, и́, ж.» on the first line, with the definition if there is only one
+        lead = texts.pop(0) if not SENSE.match(texts[0]) else ''
+        block = f'<p>→ <b>{head}</b>{lead}</p>' + ''.join(f'<p>{p}</p>' for p in texts)
+        # after the definition that holds the reference, before its examples and the idioms
+        defs = [i for i, (ex, _) in enumerate(paras) if not ex]
+        last = defs[len(senses(paras)) - 1]
+        pos = list(PARA.finditer(e['body']))[last].end()
+        e['body'] = e['body'][:pos] + block + e['body'][pos:]
+        done += 1
+    print('references expanded', done, file=sys.stderr)
+
+
 def load_wiki(path, sum_entries):
     entries, form_pages, date = wiktionary.parse(path)
     # a capitalized entry («Земля», «Сонце») would take the lookups of the
@@ -368,8 +490,11 @@ def load_wiki(path, sum_entries):
 GRAM_LABEL = re.compile(r'(?<![а-яіїєґ’])(ч|ж|с|мн|прийм|спол|част|виг|присл|док|недок|невідм|числ|порядк|кільк|'
                         r'розм|перен|заст|діал|спец|техн|мед|біол|бот|зоол|фізіол|юр|військ|церк|ірон|зневажл|'
                         r'пестл|збірн|офіц|поет|знач|ім|присудк|прикм|підсил|перев|р|в|з|до|у|стос|ч\. і ж)\.')
-SENSE_LABEL = re.compile(r'^((?:(?:невідм|розм|перен|заст|діал|спец|техн|мед|біол|бот|зоол|фізіол|юр|військ|церк|ірон|'
+SENSE_LABEL = re.compile(r'^((?:(?:невідм|іст|книжн|розм|перен|заст|діал|спец|техн|мед|біол|бот|зоол|фізіол|юр|військ|церк|ірон|'
                          r'зневажл|пестл|збірн|офіц|поет|перев)\.,? |у знач\. (?:ім|присудк|прикм|підсил\. част)\.,? )+)')
+
+
+HARD_NOUN = re.compile(r'-([ау]), ч\.')
 
 
 def load_claude(path):
@@ -381,6 +506,11 @@ def load_claude(path):
         if line.startswith('#') or not line.strip():
             continue
         word, head, gram, senses = line.rstrip('\n').split('\t')
+        # an abbreviation (ШІ) is looked up in capitals, which no lowercase form produces
+        extra = {word} if word != word.lower() else set()
+        # a hard-stem masculine noun pymorphy3 cannot inflect («ґлейт», «фандом») gets the usual endings
+        if (m := HARD_NOUN.fullmatch(gram)) and word[-1] in 'бвдзлмнпрстф' and not forms_for(word) - {word}:
+            extra |= {word + end for end in (m[1], 'у', 'ові', 'ом', 'і', 'е', 'и', 'ів', 'ам', 'ами', 'ах')}
         gram = GRAM_LABEL.sub(lambda m: f'<i>{m[0]}</i>', html.escape(gram, quote=False))
         senses = [SENSE_LABEL.sub(lambda m: f'<i>{m[1].strip()}</i> ', html.escape(s.strip(), quote=False))
                   for s in senses.split(' | ')]
@@ -388,9 +518,8 @@ def load_claude(path):
             body = f'<p>, {gram} {senses[0]}</p>'
         else:
             body = f'<p>, {gram}</p>' + ''.join(f'<p>{i}. {s}</p>' for i, s in enumerate(senses, 1))
-        # an abbreviation (ШІ) is looked up in capitals, which no lowercase form produces
         res.append(dict(word=word.lower(), head=html.escape(head, quote=False), body=body, src='claude',
-                        extra={word} if word != word.lower() else set()))
+                        extra=extra))
     return res
 
 
@@ -584,6 +713,7 @@ def build(mode, sum_entries, wiki_entries, claude_entries, wiki_date):
 
 
 sum_entries = load_sum(args.sum)
+expand_references(sum_entries)
 print('SUM-11 entries', len(sum_entries), file=sys.stderr)
 wiki_entries, wiki_date = load_wiki(args.wiki, sum_entries)
 print('Wiktionary entries', len(wiki_entries), 'as of', wiki_date, file=sys.stderr)
@@ -594,5 +724,9 @@ extras = morph_extras({plain(e) for e in sum_entries + wiki_entries + claude_ent
 for e in sum_entries + wiki_entries + claude_entries:
     e['extra'] |= extras.get(plain(e), set())
 print('extra forms for', len(extras), 'headwords', file=sys.stderr)
+variants = {} if NO_INFL else load_variants(args.variants)
+for e in sum_entries + wiki_entries + claude_entries:
+    e['extra'] |= variants.get(plain(e), set())
+print('other spellings for', len(variants), 'headwords', file=sys.stderr)
 for mode in (MODES if args.mode == 'all' else [args.mode]):
     build(mode, sum_entries, wiki_entries, claude_entries, wiki_date)

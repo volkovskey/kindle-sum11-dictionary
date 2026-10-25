@@ -37,20 +37,23 @@ Long-press a word in a Ukrainian book to see its definition.
 
 | | File | Entries | Size | Contents |
 |:--:|:--|--:|--:|:--|
-| ⭐ | **`sum11-wiktionary.mobi`** | 139,422 | 198&nbsp;MB | **SUM-11 first, then Wiktionary and Claude.**<br>• SUM-11: 131,155 entries<br>• Wiktionary: 6,885, for words SUM-11 lacks<br>• Claude (AI): 1,382, for words neither has |
-| | `wiktionary-sum11.mobi` | 139,400 | 192&nbsp;MB | **Wiktionary first, then SUM-11 and Claude.**<br>• Wiktionary: 18,186 entries<br>• SUM-11: 119,832, for words Wiktionary lacks or only cross-references<br>• Claude (AI): 1,382, for words neither has |
-| | `sum11.mobi` | 131,155 | 187&nbsp;MB | **SUM-11 only.** 131,155 entries |
+| ⭐ | **`sum11-wiktionary.mobi`** | 139,526 | 199&nbsp;MB | **SUM-11 first, then Wiktionary and Claude.**<br>• SUM-11: 131,155 entries<br>• Wiktionary: 6,885, for words SUM-11 lacks<br>• Claude (AI): 1,486, for words neither has |
+| | `wiktionary-sum11.mobi` | 139,504 | 193&nbsp;MB | **Wiktionary first, then SUM-11 and Claude.**<br>• Wiktionary: 18,186 entries<br>• SUM-11: 119,832, for words Wiktionary lacks or only cross-references<br>• Claude (AI): 1,486, for words neither has |
+| | `sum11.mobi` | 131,155 | 189&nbsp;MB | **SUM-11 only.** 131,155 entries |
 | | `wiktionary.mobi` | 19,915 | 19&nbsp;MB | **Ukrainian Wiktionary only.** 19,915 entries |
 
 All variants find inflected forms (≈4M, generated with pymorphy3, including
 gerunds and superlatives: «кажучи» opens «казати»), capitalized
-words at the start of a sentence, «ґ»/«г» spellings and any apostrophe. In the
-mixed dictionaries every entry ends with its source. ⭐ marks the recommended one.
+words at the start of a sentence, «ґ»/«г» spellings, western forms («войте»,
+«шклисті» open «війт», «склистий») and any apostrophe. ~9,500 SUM-11 entries
+that only point to another word («хоругва»: «old. Корогва.») also show that
+word's definition. In the mixed dictionaries every entry ends with its source.
+⭐ marks the recommended one.
 
-The mixed dictionaries also carry ~1,400 short definitions written by Claude
+The mixed dictionaries also carry ~1,500 short definitions written by Claude
 (AI, Anthropic) for words neither source has: words missing from the SUM-11
-data («проти», «прямо», «пташка») and modern vocabulary («процесор»,
-«нейромережа», «ШІ»). They are signed «— Claude (ШІ)», may contain mistakes
+data («проти», «прямо», «пташка»), modern vocabulary («процесор»,
+«нейромережа», «ШІ», «дипфейк») and words from books («ґлейт», «фактотум»). They are signed «— Claude (ШІ)», may contain mistakes
 and live in [`claude.tsv`](claude.tsv); please report errors in issues.
 
 SUM-11 is consistent: detailed definitions with literary examples, which is what
@@ -101,6 +104,8 @@ The script needs macOS or Linux with `python3`, `curl` and `unzip`. It downloads
 the SUM-11 tab file and the latest Ukrainian Wiktionary dump, generates OPF/HTML
 with `build_dict.py` (Wiktionary wikitext parsing in `wiktionary.py`) and
 compiles them with [kindling](https://github.com/ciscoriordan/kindling).
+Claude's definitions come from `claude.tsv`, other spellings of headwords
+(«войт» for «війт») from `variants.tsv`.
 
 ## Lessons learned
 
@@ -143,6 +148,11 @@ compiles them with [kindling](https://github.com/ciscoriordan/kindling).
     and shows a blank library tile. `library_cover.py` renames both records
     after the build; on a Kindle the cover then shows, and lookups and
     Vocabulary Builder keep working.
+11. A popup cannot follow a reference, and ~9,500 SUM-11 entries are only one:
+    «Те саме, що **X**» (same as X), «див. **X**» or a bare synonym. The
+    definitions of X, without examples or idioms, are inserted after the
+    reference, only the sense it names («скля́нка¹ 1») if it names one,
+    following references to references up to three hops.
 
 ## Known gaps
 
